@@ -1,2 +1,185 @@
-# plant-monitoring-iot
-🪴 An IoT system for monitoring the environment your plants (for LNU Applied IoT summer course)
+# How To Build A Plant Environment Monitoring System
+
+By: Balazs Hevesi bh222pv
+
+![image](IMG_3398.jpg)
+![image](flow.png)
+
+## Overview
+
+Managing a collection of houseplants can quickly become overwhelming, each one has its own ideal temperature, humidity, light level, and watering schedule.
+
+This system takes the guesswork out of plant care by tracking key environmental factors; air temperature, humidity, light intensity, and soil moisture all in real time via an intuitive graphical dashboard.
+
+It also allows for notifications via webhooks when conditions fall outside your chosen thresholds.
+
+Replicating this system takes about 8 hours (depending on experience and any unforeseen issues)
+
+## Objective
+
+I chose to build this system because I have started getting into the hobby of collecting plants and I thought it would be interesting to have some insight on their environment and find potential correlations between the data and the well-being of the plants. This could help with finding out how often and how much the plant should be watered, how much sunlight it should be exposed to, and what temperatures it should be kept at, thus removing the guesswork and improving it’s chances at, not only surviving, but also thriving.
+
+Although I am not new to programming, I have never worked with IoT systems before. This project gave me an insight into the following: analog and digital signals, communication protocols like MQTT, programming of persistent embedded systems, plus more.
+
+## Materials
+
+To build this system you will need the following:
+
+| Hardware                                           | Description                                                                                                   | Image                                                                                                                   | Links                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **PC for development and debugging**               | You will need a computer to configure the microcontroller, and debug any potential issues you might run into. |                                                                                                                         | [Electrokit – 99 SEK](https://www.electrokit.com/raspberry-pi-pico-wh)                           |
+| **Raspberry Pico WH**                              | Interacts with the sensors and then transmits the data.                                                       | ![Raspberry Pico WH](https://www.electrokit.com/resource/u1sX/ZiO/SY9XBn9fhkb/product/41019/41019114/PICO-WH-HERO.webp) | [Electrokit – 99 SEK](https://www.electrokit.com/raspberry-pi-pico-wh)                           |
+| **DHT-11 Digital Temperature and Humidity Sensor** | Digital sensor, used to get humidity readings.                                                                | ![DHT-11 Sensor](https://www.electrokit.com/upload/product/41015/41015728/41015728.jpg)                                 | [Electrokit – 49 SEK](https://www.electrokit.com/digital-temperatur-och-fuktsensor-dht11)        |
+| **MCP9700 TO-92**                                  | Analog sensor which is used to get temperature readings.                                                      | ![MCP9700 TO-92 Sensor](https://www.electrokit.com/upload/product/common/TO-92.jpg)                                     | [Electrokit – 11.50 SEK](https://www.electrokit.com/mcp9700a-to-92-temperaturgivare)             |
+| **Light Sensor**                                   | Analog sensor, used to get light readings.                                                                    | ![LDR Photoresistor Module](https://www.electrokit.com/upload/product/41015/41015727/41015727.jpg)                      | [Electrokit – 39 SEK](https://www.electrokit.com/ljussensor)                                     |
+| **FC-28 Soil Moisture Sensor**                     | Analog sensor, used to get soil moisture readings.                                                            | ![FC-28 Soil Moisture Sensor](https://www.electrokit.com/upload/product/41015/41015738/41015738.jpg)                    | [Electrokit – 29 SEK](https://www.electrokit.com/jordfuktighetssensor)                           |
+| **USB-A to Micro-USB Cable**                       | Cable needed to power the microcontroller, as well as flash firmware and transfer the code to the device.     | N/A                                                                                                                     | [Electrokit – 35 SEK](https://www.electrokit.com/en/usb-kabel-a-hane-micro-b-5p-hane-1m)         |
+| **Breadboard (840 tie-points)**                    | Used to build the system circuits without soldering anything nor printing a PCB board.                        | ![Breadboard 840 tie-points](https://www.electrokit.com/upload/product/10160/10160840/10160840.jpg)                     | [Electrokit – 69 SEK](https://www.electrokit.com/en/kopplingsdack-840-anslutningar)              |
+| **Jumper Wires Male-Male**                         | Used for connecting the sensors of the system.                                                                | ![Jumper Wires Male-Male](https://www.electrokit.com/upload/product/41015/41015221/41015221.jpg)                        | [Electrokit – 52 SEK](https://www.electrokit.com/en/labbsladd-20-pin-15cm-with-dupont-male/hane) |
+| **Jumper Wires Male-Female**                       | Used for connecting the sensors of the system whilst allowing the location of the sensor to be flexible.      | ![Jumper Wires Male-Female](https://www.electrokit.com/upload/product/41012/41012911/41012911.jpg)                      | [Electrokit – 49 SEK](https://www.electrokit.com/en/labbsladd-20-pin-15cm-hona/hane)             |
+| **Resistor 10 kΩ**                                 | Used to power the blinking LED light.                                                                         | ![Resistor 10 kΩ](https://www.electrokit.com/resource/u3Lj/Lub/8ncNLrLmTPI/product/40810/40810410/40810410.png)         | [Electrokit – 1 SEK](https://www.electrokit.com/en/motstand-kolfilm-0.25w-10kohm-10k)            |
+
+Computer Setup
+
+To develop and set up this project I used a Macbook Air M2 (8GB Memory, 256GB storage), running macOS Sonoma (14.5). My code editor of choice was VSCode. An essential extension in my workflow was MicroPico (by paulober), it helped me connect to the microcontroller as well as upload the python files for execution.
+
+The computer setup I used isn’t the most performant nor the most flexible, but it is fairly popular, thus making debugging and troubleshooting a breeze. This allowed me to focus more on the code and the development of the project rather than being bogged down by my choice of tools.
+
+The computer, operating system and any additional pieces of software you choose to use is mostly irrelevant for the setup of this project, as long you’re able to:
+
+1. Write and debug python code
+2. Connect to the Pico
+3. Upload the python files to the Pico
+   Then you should be good!
+
+Putting everything together
+
+images
+
+## Platform
+
+My system makes use of 4 different platforms which all need to be hosted.
+
+Firstly there’s Adafruit IO. It’s used as an MQTT broker where the IoT devices send their readings to. Although it is open-source and therefore can be self-hosted, I chose to simply use their free tier instead. It works fine, although it does have rate limiting which is fairly easy to run into. Upgrading to a paid tier might be worth it if you want to publish the readings more frequently.
+
+The second service I make use of in the system is influxDB. It's a SQL-like database but made specifically to deal with time series data (like readings form an IoT device). Since I already have some experience with SQL I thought it would make a great fit in the stack.
+
+The third service I make use of is Telegraf. Essentially, It’s used to poll the Adafruit IO feed and insert the data into InfluxDB.
+
+The fourth service I use is Grafana. Grafana is a dashboard-building tool. It integrates well with influxDB, which is exactly why I chose it.
+
+InfluxDB, Telegraf, and Grafana are hosted locally on my machine with the help of docker compose. I would’ve liked to use something like railway.app to host it instead, but due to time constraints i couldn’t. Another interesting idea could’ve been to self-host all of the services on something like a Raspberry Pi, that way i would have more control over the whole process.
+
+The Code
+
+The code for this project is available in the Github repo in “src/”. It isn’t overly simple, but also not extremely complex.
+
+Turns out MicroPython doesn’t have an MQTT library built in, and it’s not possible to do “pip” installs on a microcontroller, so my best bet was to simply copy paste a the file from the python library know as “umqtt.simple” to get MQTT connectivity working.
+
+Although I generally like to stay away from using inheritance and classes (because it can cause unnecessary complexity), I thought that using object oriented principles could actually be a really nice fit for this project. I chose to think of the sensors as classes. Firstly I use a “Sensor” superclass which all of the different sensor classes then get to inherit from. This superclass defines methods such as “measure” and “get_average”. This ensures that we can always call the “measure” method on all sensors, this is pretty nice for simplifying the code. Below is a UML diagram over the code.
+
+```mermaid
+classDiagram
+   class Sensor {
+       <<abstract>>
+       -_topic_suffix: str
+       -maxlen: int
+       -_reads: list
+       -_last_raw: float
+       +__init__(topic_suffix, samples_for_average)
+       +get_topic_suffix() str
+       +get_raw() float
+       +get_average() float
+       -_append_read(value) void
+       +measure()* void
+   }
+
+
+   class TemperatureSensor {
+       -adc: ADC
+       +__init__(pin_num, topic_suffix, samples_for_average)
+       +measure() void
+       +raw() float
+       +get_average() float
+   }
+
+
+   class HumiditySensor {
+       -sensor: DHT11
+       +__init__(pin_num, topic_suffix, samples_for_average)
+       +measure() void
+       +raw() float
+       +get_average() float
+   }
+
+
+   class LightSensor {
+       -adc: ADC
+       +__init__(pin_num, topic_suffix, samples_for_average)
+       +measure() void
+       +raw() float
+       +get_average() float
+   }
+
+
+   class SoilMoistureSensor {
+       -adc: ADC
+       -_wet: int
+       -_dry: int
+       +__init__(pin_num, topic_suffix, wet_val, dry_val, samples_for_average)
+       +measure() void
+       +get_raw() int
+       +get_average() int
+   }
+
+
+   Sensor <|-- TemperatureSensor : extends
+   Sensor <|-- HumiditySensor : extends
+   Sensor <|-- LightSensor : extends
+   Sensor <|-- SoilMoistureSensor : extends
+```
+
+Because Adafruit imposes rate limitations, we cannot publish our readings as often as we can take readings. To (somewhat) remedy this; I chose to keep an average of the last 30 readings for each sensor, and then only actually publish the average. The logic for keeping the averages is handled by the Sensor classes.
+The sensor superclass stores the last 30 readings in a deque data structure. I specifically chose to make use of a deque instead of python's array. I chose this because it’s technically faster (Although since we’re only storing the last 30 values it might not be a big deal). In the deque data structure, appending and popping are both constant time operations (and we do alot of that) whereas with an array popping is an O(n) time operation.
+
+Furthermore I chose to implement a type of “Event loop” into my program (perhaps the term “Event loop” is inaccurate, i don’t know). It allows me to have more flexibility with the main loop of the program, not every operation needs to adhere to the main loop's sleeping-time.
+
+Below is an example of how i use it in “main.py”
+
+```py
+EVENT_LOOP_TICK_DURATION_MS = 1000
+PUBLISH_TICK_INTERVAL = 30
+print("starting event loop...")
+event_loop = EventLoop([], EVENT_LOOP_TICK_DURATION_MS)
+event_loop.add_item(EventLoopItem(led.toggle, interval_ticks=1))
+event_loop.add_item(EventLoopItem(measure, interval_ticks=1))
+event_loop.add_item(EventLoopItem(publish, interval_ticks=PUBLISH_TICK_INTERVAL))
+event_loop.start()
+```
+
+We start by instantiating the event_loop and giving it duration. This tells the program how often it should run the eventloop.
+Then we append the EventLoopItems, we start by adding “led.toggle” and we give it an interval_tick of “1”. This means that it will run every time the eventloop runs. So if the event_loop runs every 1000ms, then the led will toggle every 1000ms.
+Then we run “measure” which takes measurements of all sensors, this will also happen every time the event loop runs
+Finally we add “publish” which will publish the readings. This only happens every 30 runs of the event loop. So if each run takes 1000ms, then we would only run “publish” every 1000ms \* 30 = 30s, this is done to avoid running into rate limits.
+
+I also wanted to call webhooks in case the solid moisture went under a certain threshold, but later on in the development I found that that could actually also be implemented though Grafana’s notification system, so that’s what I used.
+
+Transmitting the data
+
+The data is being transmitted every 30s. This can be adjusted pretty easily by changing the “EVENT_LOOP_TICK_DURATION_MS” and “PUBLISH_TICK_INTERVAL” constants in “main.py ”. I chose 30s in order to not run into adafruit's rate limiting. Although I am transmitting the data only every 30s, the data being transmitted is actually an average of measurements taken every second since the last transmission.
+
+I chose to use WiFi as my wireless protocol as it is sufficient for my use case. I don’t need long range connectivity.
+
+For my transport protocol I went with MQTT, although HTTP could’ve also been a good alternative.
+
+Presenting the data
+
+Data is added to the database every 15s (this is defined in the “telegraf.conf” file)
+
+I used grafana to build the dashboard which presents the data.
+
+[images]
+
+Finalizing the design
+
+[imagaes]
