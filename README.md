@@ -2,8 +2,10 @@
 
 By: Balazs Hevesi bh222pv
 
+Replicating this system should take around 8 hours (depending on experience and any unforeseen issues).
+
 ![image](IMG_3398.jpg)
-![image](flow.png)
+![flow diagram](flow.png)
 
 ## Overview
 
@@ -12,8 +14,6 @@ Managing a collection of houseplants can quickly become overwhelming, each one h
 This system takes the guesswork out of plant care by tracking key environmental factors; air temperature, humidity, light intensity, and soil moisture all in real time via an intuitive graphical dashboard.
 
 It also allows for notifications via webhooks when conditions fall outside your chosen thresholds.
-
-Replicating this system takes about 8 hours (depending on experience and any unforeseen issues)
 
 ## Objective
 
@@ -52,9 +52,9 @@ The computer, operating system and any additional pieces of software you choose 
 3. Upload the python files to the Pico
    Then you should be good!
 
-Putting everything together
+## Putting everything together
 
-images
+![hand-drawn circuit diagram over the wiring of the mikrocontroller](circuit.jpg)
 
 ## Platform
 
