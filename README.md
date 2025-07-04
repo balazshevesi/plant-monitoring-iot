@@ -345,7 +345,7 @@ The sensor superclass stores the last 30 readings in a deque data structure. I s
 
 Furthermore I chose to implement a type of “Event loop” into my program (perhaps the term “Event loop” is inaccurate, i don’t know). It allows me to have more flexibility with the main loop of the program, not every operation needs to adhere to the main loop's sleeping-time.
 
-Below is an example of how i use it in “main.py”
+Below is an example of how i use it in `main.py`
 
 ```py
 EVENT_LOOP_TICK_DURATION_MS = 1000
@@ -365,7 +365,7 @@ Finally we add “publish” which will publish the readings. This only happens 
 
 I also wanted to call webhooks in case the solid moisture went under a certain threshold, but later on in the development I found that that could actually also be implemented though Grafana’s notification system, so that’s what I used.
 
-Transmitting the data
+## Transmitting the data
 
 The data is being transmitted every 30s. This can be adjusted pretty easily by changing the “EVENT_LOOP_TICK_DURATION_MS” and “PUBLISH_TICK_INTERVAL” constants in “main.py ”. I chose 30s in order to not run into adafruit's rate limiting. Although I am transmitting the data only every 30s, the data being transmitted is actually an average of measurements taken every second since the last transmission.
 
@@ -373,14 +373,33 @@ I chose to use WiFi as my wireless protocol as it is sufficient for my use case.
 
 For my transport protocol I went with MQTT, although HTTP could’ve also been a good alternative.
 
-Presenting the data
+## Presenting the data
 
 Data is added to the database every 15s (this is defined in the `telegraf.conf` file)
 
 I used grafana to build the dashboard which presents the data.
 
-[images]
+![Screenshot of the dashboard](screenshot_dash.png)
 
-Finalizing the design
+Grafana provides an alert system which i made use of to call webhooks.
 
-[imagaes]
+![Screenshot of the the contact point in grafana](screenshot2.png)
+Firstly, the contact point needs to be added.
+
+![Screenshot of the the contact point in grafana](screenshot2.png)
+Then we need to create an alert rule which will call on the contact when a defined criteria is met (the soil is dry).
+
+![Screenshot of my email client receiving the email](screenshot4.png)
+For now; i have it setup so that it invokes a webhook which then sends me an email.
+
+## Finalizing the design
+
+![image](IMG_3398.jpg)
+Picture of the system bring hooked up to my (baby) lemon tree.
+
+If i had more time to work on this project i would definitely change some aspects of it.
+Firstly, i would try to self-host everything. I don't have much experience self-hosting, but i think it would be a great opportunity to learn. I think it would be sick to be able to access the grafana dashboard and look at how my plants are doing even when im not home.
+
+Secondly, im not a huge fan of low-code tools. Even though grafana turned out to be alright to work with, i would've liked to build my own dashboard with javascript.
+
+Overall, I am pretty happy with how the project turned out.
