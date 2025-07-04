@@ -1,0 +1,52 @@
+version: '3'
+
+networks:
+    tig-net:
+        driver: bridge
+
+services:
+    influxdb:
+        image: influxdb:1.8
+        container_name: influxdb
+        ports:
+            - "8086:8086"
+        environment:
+            INFLUXDB_DB: "telegraf"
+            INFLUXDB_ADMIN_ENABLED: "true"
+            INFLUXDB_ADMIN_USER: "telegraf"
+            INFLUXDB_ADMIN_PASSWORD: "uforobot"
+        networks:
+            - tig-net
+        volumes:
+            - ./data/influxdb:/var/lib/influxdb
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        ports:
+            - 3000:3000
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+        volumes:
+            - ./data/grafana:/var/lib/grafana
+        networks:
+            - tig-net
+        restart: always
+
+    telegraf:
+        image: telegraf:latest
+        depends_on:
+            - "influxdb"
+        environment:
+            HOST_NAME: "telegraf"
+            INFLUXDB_HOST: "influxdb"
+            INFLUXDB_PORT: "8086"
+            DATABASE: "telegraf"
+        volumes:
+            - ./telegraf.conf:/etc/telegraf/telegraf.conf
+        tty: true
+        networks:
+            - tig-net
+        privileged: true
+        restart: always
