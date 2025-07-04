@@ -39,7 +39,7 @@ To build this system you will need the following:
 | **Jumper Wires Male-Female**                       | Used for connecting the sensors of the system whilst allowing the location of the sensor to be flexible.      | ![Jumper Wires Male-Female](https://www.electrokit.com/upload/product/41012/41012911/41012911.jpg)                      | [Electrokit – 49 SEK](https://www.electrokit.com/en/labbsladd-20-pin-15cm-hona/hane)             |
 | **Resistor 10 kΩ**                                 | Used to power the blinking LED light.                                                                         | ![Resistor 10 kΩ](https://www.electrokit.com/resource/u3Lj/Lub/8ncNLrLmTPI/product/40810/40810410/40810410.png)         | [Electrokit – 1 SEK](https://www.electrokit.com/en/motstand-kolfilm-0.25w-10kohm-10k)            |
 
-Computer Setup
+## Computer Setup
 
 To develop and set up this project I used a Macbook Air M2 (8GB Memory, 256GB storage), running macOS Sonoma (14.5). My code editor of choice was VSCode. An essential extension in my workflow was MicroPico (by paulober), it helped me connect to the microcontroller as well as upload the python files for execution.
 
@@ -50,11 +50,212 @@ The computer, operating system and any additional pieces of software you choose 
 1. Write and debug python code
 2. Connect to the Pico
 3. Upload the python files to the Pico
-   Then you should be good!
+
+Then you should be good!
+
+The following step-by-step tutorial assumes that you're using VSCode (or some fork of it like VSCodium, Windsurf, or Cursor)
+
+### Step 1: Setup Development Environment
+
+> These steps assume you’re on Windows/macOS/Linux. Paths and commands may vary slightly.
+
+1. **Download VS Code**
+
+   [Visual Studio Code website](https://code.visualstudio.com/) and click **Download** for your operating system.
+
+2. **Install VS Code**
+
+   - **Windows:** Run the downloaded `.exe` installer and follow the prompts.
+   - **macOS:** Open the `.dmg`, drag “Visual Studio Code” into your Applications folder.
+     - Alternatively, run `brew install --cask visual-studio-code`
+   - **Linux:** Use your distro’s package manager or download the `.deb`/`.rpm` package.
+
+3. **Install the MicroPico extension**
+
+   1. Open VS Code.
+   2. Click the Extensions icon (or press `Ctrl+Shift+X` / `⌘+Shift+X`).
+   3. Search for MicroPico (by paulober) and click "Install".
+
+4. **Download the MicroPython firmware**
+
+   1. In your browser, go to the [MicroPython downloads for Raspberry Pi Pico](https://micropython.org/download/rp2-pico/).
+   2. Download the latest `.uf2` file.
+
+5. **Put your Pico into BOOTSEL mode**
+
+   1. Hold down the BOOTSEL button while plugging it into your computer.
+   2. A new removable drive (“RPI-RP2”) will appear.
+
+6. **Install (flash) the firmware onto the Pico**
+
+   1. Drag-and-drop the downloaded `.uf2` file onto the “RPI-RP2” drive.
+   2. The drive will disappear and the Pico will reboot running MicroPython.
+
+7. **Connect to the Pico from within VS Code**
+
+   1. In VS Code’s Command Palette (`Ctrl+Shift+P` / `⌘+Shift+P`), type and select `MicroPico: Connect`.
+
+8. **Run a Python file on the Pico**
+
+   1. Open your `.py` script in VS Code.
+   2. With your script open, use click the "Run" button (looks like a triangle) in the status bar.
+   3. It will copy the file to the Pico’s filesystem and run it .
+
+9. **Upload a folder (project) to the Pico**
+   1. Open the file tree view in the sidebar.
+   2. Right click the folder you wish to upload.
+   3. This will copy over your local folder (all `.py` files) onto the Pico, useful for larger projects.
+      ![screenshot of the ](screenshot1.png)
+
+### Step 2: Setup Docker
+
+> This part describes the setup of Docker compose, which will be used to run the TIG-Stack: the Telegraf, (used to poll data), InfluxDB (for the storing of data), and Grafana (web dashboard).
+
+1. **Install Docker Engine & Docker Compose**
+
+   - **Windows/macOS:**
+     1. Download and install Docker Desktop from https://www.docker.com/get-started.
+     2. Follow the on-screen installer prompts and reboot if prompted.
+   - **Linux (Ubuntu/Debian example):**
+     ```bash
+     sudo apt-get update
+     sudo apt-get install -y docker.io docker-compose
+     sudo usermod -aG docker $USER      # so you can run `docker` without sudo
+     newgrp docker                      # apply the new group membership
+     ```
+   - Verify installation:
+     ```bash
+     docker --version
+     docker-compose --version
+     ```
+
+2. **Write the `docker-compose.yml` file**
+
+   1. In your project root, create a file named `docker-compose.yml`.
+   2. Paste in the following (omit any real API-keys or passwords—replace them with environment variables or Docker secrets in production):
+
+      ```yaml
+      version: "3"
+
+      networks:
+        tig-net:
+          driver: bridge
+
+      services:
+        influxdb:
+          image: influxdb:1.8
+          container_name: influxdb
+          ports:
+            - "8086:8086"
+          environment:
+            INFLUXDB_DB: "telegraf"
+            INFLUXDB_ADMIN_ENABLED: "true"
+            INFLUXDB_ADMIN_USER: "telegraf"
+            INFLUXDB_ADMIN_PASSWORD: "<your-password-here>"
+          networks:
+            - tig-net
+          volumes:
+            - ./data/influxdb:/var/lib/influxdb
+
+        grafana:
+          image: grafana/grafana:latest
+          container_name: grafana
+          ports:
+            - "3000:3000"
+          environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+          volumes:
+            - ./data/grafana:/var/lib/grafana
+          networks:
+            - tig-net
+          restart: always
+
+        telegraf:
+          image: telegraf:latest
+          depends_on:
+            - influxdb
+          environment:
+            HOST_NAME: "telegraf"
+            INFLUXDB_HOST: "influxdb"
+            INFLUXDB_PORT: "8086"
+            DATABASE: "telegraf"
+          volumes:
+            - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+          networks:
+            - tig-net
+          restart: always
+      ```
+
+   3. Save the file.
+
+3. **Write the `telegraf.conf` file**
+
+   1. In the same directory, create `telegraf.conf`.
+   2. Paste in your Telegraf configuration, for example:
+
+      ```toml
+      [agent]
+        interval = "15s"
+        flush_interval = "15s"
+
+      [[inputs.mqtt_consumer]]
+        name_override = "adafruit_io"
+        servers       = ["tcp://io.adafruit.com:1883"]
+        topics        = [
+          "Balazs1/feeds/iot.temperature/json",
+          "Balazs1/feeds/iot.humidity/json",
+          "Balazs1/feeds/iot.brightness/json",
+          "Balazs1/feeds/iot.soil-moisture/json",
+        ]
+        client_id       = "telegraf-adafruit"
+        username        = "<your-username>"
+        password        = "<your-aio-key>"
+        data_format     = "json_v2"
+
+        [[inputs.mqtt_consumer.json_v2]]
+          measurement_name_path = ""
+          timestamp_path        = "data.created_at"
+          timestamp_format      = "2006-01-02T15:04:05Z07:00"
+
+          [[inputs.mqtt_consumer.json_v2.field]]
+            path = "data.value"
+            type = "float"
+
+          [[inputs.mqtt_consumer.json_v2.tag]]
+            path = "key"
+            type = "string"
+
+      [[outputs.influxdb]]
+        urls     = ["http://influxdb:8086"]
+        database = "telegraf"
+        username = "telegraf"
+        password = "<your-password-here>"
+      ```
+
+   3. Replace all placeholder values (`<your-aio-key>`, `<your-password-here>`, etc.) with your own credentials or environment‐variable references.
+
+4. **Run the TIG-Stack**
+   1. In your project directory, start all services:
+      ```bash
+      docker-compose up -d
+      ```
+   2. Check that containers are running:
+      ```bash
+      docker ps
+      ```
+   3. Tail the logs if you need to debug Telegraf or InfluxDB:
+      ```bash
+      docker-compose logs -f telegraf influxdb
+      ```
+   4. Open your browser and verify:
+      - **Grafana** at http://localhost:3000 (login: `admin`/`admin`)
+      - **InfluxDB** API at http://localhost:8086 (you can query the `telegraf` database)
 
 ## Putting everything together
 
-![hand-drawn circuit diagram over the wiring of the mikrocontroller](circuit.jpg)
+![hand-drawn circuit diagram over the wiring of the microcontroller](circuit.jpg)
+Circuit diagram over the wiring of the microcontroller.
 
 ## Platform
 
@@ -174,7 +375,7 @@ For my transport protocol I went with MQTT, although HTTP could’ve also been a
 
 Presenting the data
 
-Data is added to the database every 15s (this is defined in the “telegraf.conf” file)
+Data is added to the database every 15s (this is defined in the `telegraf.conf` file)
 
 I used grafana to build the dashboard which presents the data.
 
