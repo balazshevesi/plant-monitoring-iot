@@ -395,7 +395,7 @@ For now; i have it setup so that it invokes a webhook which then sends me an ema
 ## Finalizing the design
 
 ![image](IMG_3398.jpg)
-Picture of the system bring hooked up to my (baby) lemon tree.
+Picture of the system being hooked up to my (baby) lemon tree.
 
 If i had more time to work on this project i would definitely change some aspects of it.
 Firstly, i would try to self-host everything. I don't have much experience self-hosting, but i think it would be a great opportunity to learn. I think it would be sick to be able to access the grafana dashboard and look at how my plants are doing even when im not home.
