@@ -38,6 +38,8 @@ To build this system you will need the following:
 | **Jumper Wires Male-Male**                         | Used for connecting the sensors of the system.                                                                | ![Jumper Wires Male-Male](https://www.electrokit.com/upload/product/41015/41015221/41015221.jpg)                        | [Electrokit – 52 SEK](https://www.electrokit.com/en/labbsladd-20-pin-15cm-with-dupont-male/hane) |
 | **Jumper Wires Male-Female**                       | Used for connecting the sensors of the system whilst allowing the location of the sensor to be flexible.      | ![Jumper Wires Male-Female](https://www.electrokit.com/upload/product/41012/41012911/41012911.jpg)                      | [Electrokit – 49 SEK](https://www.electrokit.com/en/labbsladd-20-pin-15cm-hona/hane)             |
 | **Resistor 10 kΩ**                                 | Used to power the blinking LED light.                                                                         | ![Resistor 10 kΩ](https://www.electrokit.com/resource/u3Lj/Lub/8ncNLrLmTPI/product/40810/40810410/40810410.png)         | [Electrokit – 1 SEK](https://www.electrokit.com/en/motstand-kolfilm-0.25w-10kohm-10k)            |
+| **LED Light**                                      | Used to indicate that the python program is running.                                                          | ![LED Light](https://www.electrokit.com/upload/product/40307/40307020/40300051.jpg)                                     | [Electrokit – 5 SEK](https://www.electrokit.com/led-5mm-rod-diffus-1500mcd)                      |
+
 
 ## Computer Setup
 
